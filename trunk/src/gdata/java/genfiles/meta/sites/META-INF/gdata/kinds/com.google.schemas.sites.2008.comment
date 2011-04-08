@@ -1,0 +1,2 @@
+# GData Kind Adaptors for http://schemas.google.com/sites/2008#comment
+com.google.gdata.data.sites.CommentEntry

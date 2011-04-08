@@ -1,0 +1,2 @@
+# GData Kind Adaptors for http://schemas.google.com/sites/2008#announcement
+com.google.gdata.data.sites.AnnouncementEntry

@@ -1,0 +1,2 @@
+# GData Kind Adaptors for http://schemas.google.com/webmasters/tools/2007#sitemap-news
+com.google.gdata.data.webmastertools.SitemapsNewsEntry

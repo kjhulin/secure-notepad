@@ -1,0 +1,3 @@
+# GData Kind Adaptors for http://schemas.google.com/maps/2008#map
+com.google.gdata.data.maps.MapFeed
+com.google.gdata.data.maps.MapEntry
