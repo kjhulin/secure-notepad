@@ -1,0 +1,3 @@
+# GData Kind Adaptors for http://schemas.google.com/webmasters/tools/2007#crawl_issue_entry
+com.google.gdata.data.webmastertools.CrawlIssuesFeed
+com.google.gdata.data.webmastertools.CrawlIssueEntry

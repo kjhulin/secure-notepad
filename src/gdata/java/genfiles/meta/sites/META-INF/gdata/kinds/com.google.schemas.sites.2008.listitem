@@ -1,0 +1,2 @@
+# GData Kind Adaptors for http://schemas.google.com/sites/2008#listitem
+com.google.gdata.data.sites.ListItemEntry
