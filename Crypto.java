@@ -1,12 +1,19 @@
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.util.Arrays;
-import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
-import javax.crypto.IllegalBlockSizeException;
+import javax.crypto.CipherInputStream;
+import javax.crypto.CipherOutputStream;
 import javax.crypto.Mac;
 import javax.crypto.NoSuchPaddingException;
 import javax.crypto.spec.IvParameterSpec;
@@ -14,106 +21,132 @@ import javax.crypto.spec.SecretKeySpec;
 
 public class Crypto
 {
-	// Encrypt AES-256 of Plain Text (Non-Hex Form)
-	public static String encryptAES(byte[] cleartext, String pass, byte[] salt)
+	private final static int SALT_SIZE = 8;
+	private final static int IV_SIZE = 16;
+	private final static int HMAC_SIZE = 20;
+	private final static int NUM_ROUNDS = 1024;
+	private final static int AES_KEY_SIZE = 256;
+	private final static int HMAC_KEY_SIZE = 160;
+	private final static String AES_CIPHER_MODE = "AES/CTR/NoPadding";
+	private final static String SHA1_MODE = "SHA-1";
+	private final static String SHA256_MODE = "SHA-256";
+	private final static String HMAC_MODE = "HMacSHA1";
+	
+	// Encrypt AES-256 of Plaintext
+	// Input: Cleartext byte file (cleartext), String password (pass) from GUI
+	// Output: CryptoStore object contains (byte[] for IV and keySalt), File (cleartext) now contains Ciphertext bytes
+	public static CryptoStore encryptAES(File cleartext, String pass)
 	{
-		byte[] secret = generateSecret(pass, salt, 1024, 256);
-		System.out.println("ENC SECRET: " + toHexString(secret) + "\t(" + secret.length + ")");
+		CryptoStore cs = new CryptoStore(generateBytes(SALT_SIZE), generateBytes(IV_SIZE), new byte[0], new byte[0]);
+		//System.out.println("ENC SALT: " + toHexString(cs.getKeySalt()));
+		//System.out.println("ENC IV: " + toHexString(cs.getIV()));
+		
+		byte[] secret = generateSecret(pass, cs.getKeySalt(), NUM_ROUNDS, AES_KEY_SIZE);
+		//System.out.println("ENC SECRET: " + toHexString(secret) + "\t(" + secret.length + ")");
+		
 		SecretKeySpec keySpec = new SecretKeySpec(secret, "AES");
 		Arrays.fill(secret, (byte) 0x00);
-		//System.out.println("SECRET: " + toHexString(secret) + "\t(" + secret.length + ")");
 		
-		byte[] iv = generateBytes(16);
-		System.out.println("ENC IV: " + toHexString(iv));
+		String filename = cleartext.toString();
+		File input = new File("cleartext.old");
+		moveFile(cleartext, input);
+		File out = new File(filename);
 		
-		byte[] ciphertext = null;
+		//System.out.println("ENC File: " + filename);
+		//System.out.println("ENC File: " + input);
+		//System.out.println("ENC Output: " + out);
 		
+		// Encrypt Contents
 		try
 		{
-			final Cipher cipher = Cipher.getInstance("AES/CTR/NoPadding");
-			IvParameterSpec ivSpec = new IvParameterSpec(iv);
+			final Cipher cipher = Cipher.getInstance(AES_CIPHER_MODE);
+			IvParameterSpec ivSpec = new IvParameterSpec(cs.getIV());
 			cipher.init(Cipher.ENCRYPT_MODE, keySpec, ivSpec);
-			ciphertext = cipher.doFinal(cleartext);
+			
+			FileInputStream is = new FileInputStream(input);
+			CipherOutputStream os = new CipherOutputStream(new FileOutputStream(out), cipher);
+			
+			byte[] buf = new byte[1024];
+			
+			int numRead = 0;
+			while((numRead = is.read(buf)) >= 0)
+				os.write(buf, 0, numRead);
+			os.close();
 		}
-		catch(NoSuchAlgorithmException e1)
-		{
-			e1.printStackTrace();
-		}
-		catch(NoSuchPaddingException e2)
-		{
-			e2.printStackTrace();
-		}
-		catch(InvalidAlgorithmParameterException e3)
-		{
-			e3.printStackTrace();
-		}
-		catch(InvalidKeyException e4)
-		{
-			e4.printStackTrace();
-		}
-		catch(IllegalBlockSizeException e5)
-		{
-			e5.printStackTrace();
-		}
-		catch(BadPaddingException e6)
-		{
-			e6.printStackTrace();
-		}
+		catch(IOException ioe)
+		{ioe.printStackTrace();}
+		catch(NoSuchAlgorithmException nsae)
+		{nsae.printStackTrace();}
+		catch(NoSuchPaddingException nspe)
+		{nspe.printStackTrace();}
+		catch(InvalidAlgorithmParameterException iape)
+		{iape.printStackTrace();}
+		catch(InvalidKeyException ike)
+		{ike.printStackTrace();}
 		
-		//System.out.println(ciphertext.length);
-		//System.out.println(toHexString(ciphertext));
+		// Remove cleartext file
+		boolean confirm = input.delete();
+		if(!confirm)
+			throw new IllegalArgumentException("ENC: Cannot Delete Input File");
 		
-		String result = toHexString(ciphertext) + toHexString(iv);
-		
-		return result;
+		return cs;
 	}
 	
-	// Decrypt AES-256 of Cipher Text (Non-Hex Form)
-	public static String decryptAES(byte[] ciphertext, String pass, byte[] salt, byte[] iv)
+	// Decrypt AES-256 of Ciphertext
+	// Input: Ciphertext byte file (ciphertext), String password (pass) from GUI, CryptoStore (cs) generated by Encrypt AES-256
+	// Output: File (ciphertext) now contains Cleartext bytes
+	public static void decryptAES(File ciphertext, String pass, CryptoStore cs)
 	{
-		byte[] secret = generateSecret(pass, salt, 1024, 256);
-		System.out.println("DEC SECRET: " + toHexString(secret) + "\t(" + secret.length + ")");
+		//System.out.println("DEC SALT: " + toHexString(cs.getKeySalt()));
+		//System.out.println("DEC IV: " + toHexString(cs.getIV()));
+		
+		byte[] secret = generateSecret(pass, cs.getKeySalt(), NUM_ROUNDS, AES_KEY_SIZE);
+		//System.out.println("DEC SECRET: " + toHexString(secret) + "\t(" + secret.length + ")");
+		
 		SecretKeySpec keySpec = new SecretKeySpec(secret, "AES");
 		Arrays.fill(secret, (byte) 0x00);
-		//System.out.println("SECRET: " + toHexString(secret) + "\t(" + secret.length + ")");
 		
-		System.out.println("DEC IV: " + toHexString(iv));
+		String filename = ciphertext.toString();
+		File input = new File("ciphertext.old");
+		moveFile(ciphertext, input);
+		File out = new File(filename);
 		
-		byte[] cleartext = null;
+		//System.out.println("DEC File: " + filename);
+		//System.out.println("DEC File: " + input);
+		//System.out.println("DEC Output: " + out);
 		
+		// Encrypt Contents
 		try
 		{
-			final Cipher cipher = Cipher.getInstance("AES/CTR/NoPadding");
-			IvParameterSpec ivSpec = new IvParameterSpec(iv);
+			final Cipher cipher = Cipher.getInstance(AES_CIPHER_MODE);
+			IvParameterSpec ivSpec = new IvParameterSpec(cs.getIV());
 			cipher.init(Cipher.DECRYPT_MODE, keySpec, ivSpec);
-			cleartext = cipher.doFinal(ciphertext);
+			
+			CipherInputStream is = new CipherInputStream(new FileInputStream(input), cipher);
+			FileOutputStream os = new FileOutputStream(out);
+			
+			byte[] buf = new byte[1024];
+			
+			int numRead = 0;
+			while((numRead = is.read(buf)) >= 0)
+				os.write(buf, 0, numRead);
+			os.close();
 		}
-		catch(NoSuchAlgorithmException e1)
-		{
-			e1.printStackTrace();
-		}
-		catch(NoSuchPaddingException e2)
-		{
-			e2.printStackTrace();
-		}
-		catch(InvalidAlgorithmParameterException e3)
-		{
-			e3.printStackTrace();
-		}
-		catch(InvalidKeyException e4)
-		{
-			e4.printStackTrace();
-		}
-		catch(IllegalBlockSizeException e5)
-		{
-			e5.printStackTrace();
-		}
-		catch(BadPaddingException e6)
-		{
-			e6.printStackTrace();
-		}
+		catch(IOException ioe)
+		{ioe.printStackTrace();}
+		catch(NoSuchAlgorithmException nsae)
+		{nsae.printStackTrace();}
+		catch(NoSuchPaddingException nspe)
+		{nspe.printStackTrace();}
+		catch(InvalidAlgorithmParameterException iape)
+		{iape.printStackTrace();}
+		catch(InvalidKeyException ike)
+		{ike.printStackTrace();}
 		
-		return new String(cleartext);
+		// Remove cleartext file
+		boolean confirm = input.delete();
+		if(!confirm)
+			throw new IllegalArgumentException("DEC: Cannot Delete Input File");
 	}
 	
 	// Generate 160/256-bit key from password + salt over iterations
@@ -124,10 +157,10 @@ public class Crypto
 		final MessageDigest md;
 		try
 		{
-			if(size == 160)
-				md = MessageDigest.getInstance("SHA-1");
+			if(size == HMAC_KEY_SIZE)
+				md = MessageDigest.getInstance(SHA1_MODE);
 			else
-				md = MessageDigest.getInstance("SHA-256");
+				md = MessageDigest.getInstance(SHA256_MODE);
 			
 			for(int i = 0; i < iter; i++)
 			{
@@ -151,41 +184,63 @@ public class Crypto
 	}
 	
 	// Calculate HMAC of Cipher Text
-	// Input: Cipher Text File w/o HMac + Salt + IV
-	// Output: Hex String
-	public static String calcHMAC(byte[] ciphertext, String pass, byte[] salt)
+	// Input: Ciphertext byte file (ciphertext) <- generated by Decrypt AES-256, String password (pass) from GUI, CryptoStore (cs)
+		// If verify HMAC -> cs should be a new CryptoStore containing the hashSalt
+			// Ouput: returns new CryptoStore with hashSalt and HMAC values only
+		// If calc HMAC -> cs should be the CryptoStore returned by Encrypt AES-256
+			// Ouput: returns modified CryptoStore (cs) with hashSalt and HMAC values appended
+	public static CryptoStore calcHMAC(File ciphertext, String pass, CryptoStore cs)
 	{
-		byte[] secret = generateSecret(pass, salt, 1024, 160);
+		if(cs.getHashSalt().length <= 0)
+			cs.setHashSalt(generateBytes(SALT_SIZE));
+		
+		byte[] secret = generateSecret(pass, cs.getHashSalt(), NUM_ROUNDS, HMAC_KEY_SIZE);
 		//System.out.println("SECRET: " + toHexString(secret) + "\t(" + secret.length + ")");
-		SecretKeySpec sKey = new SecretKeySpec(secret, "HMacSHA1");
+		
+		SecretKeySpec sKey = new SecretKeySpec(secret, HMAC_MODE);
 		Arrays.fill(secret, (byte) 0x00);
 		//System.out.println("SECRET: " + toHexString(secret) + "\t(" + secret.length + ")");
 		
-		Mac mac;
 		byte[] value = null;
 		try
 		{
-			mac = Mac.getInstance("HMacSHA1");
+			InputStream is = new FileInputStream(ciphertext);
+			
+			byte[] buf = new byte[1024];
+			Mac mac = Mac.getInstance(HMAC_MODE);
 			mac.init(sKey);
-			value = mac.doFinal(ciphertext);
+			
+			int numRead;
+			while((numRead = is.read(buf)) >= 0)
+				mac.update(buf);
+			
+			value = mac.doFinal();
+			
+			is.close();
 		}
-		catch(NoSuchAlgorithmException e1)
-		{
-			e1.printStackTrace();
-		}
-		catch (InvalidKeyException e)
-		{
-			e.printStackTrace();
-		}
+		catch(FileNotFoundException fnfe)
+		{fnfe.printStackTrace();}
+		catch(IOException ioe)
+		{ioe.printStackTrace();}
+		catch(NoSuchAlgorithmException nsae)
+		{nsae.printStackTrace();}
+		catch (InvalidKeyException ike)
+		{ike.printStackTrace();}
 		
-		return toHexString(value);
+		if(cs.getHMAC().length <= 0)
+		{
+			cs.setHMAC(value);
+			return cs;
+		}
+		else
+			return new CryptoStore(new byte[0], new byte[0], value, cs.getHashSalt());
 	}
 	
 	// Generates Secure Random Number of Bytes
 	public static byte[] generateBytes(int num)
 	{
 		num = (num >= 0) ? num : 0;
-		byte[] bytes = new byte[num];
+		final byte[] bytes = new byte[num];
 		SecureRandom sr = new SecureRandom();
 		sr.nextBytes(bytes);
 		return bytes;
@@ -195,49 +250,207 @@ public class Crypto
 	public static String toHexString(byte[] b)
 	{
 		StringBuffer sb = new StringBuffer(b.length * 2);
-	    for (int i = 0; i < b.length; i++) {
-	      int v = b[i] & 0xff;
-	      if (v < 16)
-	        sb.append('0');
-	      sb.append(Integer.toHexString(v));
-	    }
-	    return sb.toString().toUpperCase();
+		for (int i = 0; i < b.length; i++)
+		{
+			int v = b[i] & 0xff;
+			if (v < 16)
+				sb.append('0');
+			sb.append(Integer.toHexString(v));
+		}
+		return sb.toString().toUpperCase();
 	}
 	
 	// Converts Hex String to Byte Array
 	public static byte[] toByteArray(String s)
 	{
-	    int len = s.length();
-	    byte[] data = new byte[len / 2];
-	    for (int i = 0; i < len; i += 2)
-	    {
-	        data[i / 2] = (byte) ((Character.digit(s.charAt(i), 16) << 4)
-	                             + Character.digit(s.charAt(i+1), 16));
-	    }
-	    return data;
+		int len = s.length();
+		byte[] data = new byte[len / 2];
+		for (int i = 0; i < len; i += 2)
+		{
+			data[i / 2] = (byte) ((Character.digit(s.charAt(i), 16) << 4) 
+								+ Character.digit(s.charAt(i+1), 16));
+		}
+		return data;
+	}
+	
+	// Copies source to destination and Deletes source
+	private static void moveFile(File src, File dest)
+	{
+		try
+		{
+		    InputStream is = new FileInputStream(src);
+		    OutputStream os = new FileOutputStream(dest);
+
+		    byte[] buf = new byte[1024];
+		    int numRead;
+		    while ((numRead = is.read(buf)) >= 0)
+		        os.write(buf, 0, numRead);
+		    is.close();
+		    os.close();
+		    
+		    boolean confirm = src.delete();
+			if(!confirm)
+				throw new IllegalArgumentException("MOVE: Cannot Delete Src File");
+		}
+	    catch(FileNotFoundException fnfe)
+	    {fnfe.printStackTrace();}
+	    catch(IOException ioe)
+	    {ioe.printStackTrace();}
+	}
+	
+	// Create Encrypted File
+	// Input: Ciphertext bytes file, CryptoStore object (keySalt + IV + hashSalt + HMAC)
+	// Output: File (ciphertext) /w Hex Representation of all input data
+	public static void createFile(File ciphertext, CryptoStore cs)
+	{
+		try
+		{
+			String filename = ciphertext.toString();
+			File input = new File("ciphertext.old");
+			moveFile(ciphertext, input);
+			File out = new File(filename);
+			
+			InputStream is = new FileInputStream(input);
+			OutputStream os = new FileOutputStream(out);
+		    
+		    long len = (long) input.length();
+		    int numRead = 0;
+		    int c = 0;
+		    String hex;
+		    while(numRead < len)
+		    {
+		    	c = (numRead + 1024) <= len ? 1024 : (int) (len - numRead);
+		    	byte[] content = new byte[c];
+		    	is.read(content);
+		    	hex = toHexString(content);
+		    	os.write(hex.getBytes());
+		    	numRead += c;
+		    }
+		    
+		    hex = toHexString(cs.getKeySalt());
+		    os.write(hex.getBytes());
+		    
+		    hex = toHexString(cs.getIV());
+		    os.write(hex.getBytes());
+		    
+		    hex = toHexString(cs.getHashSalt());
+		    os.write(hex.getBytes());
+		    
+		    hex = toHexString(cs.getHMAC());
+		    os.write(hex.getBytes());
+		    
+		    is.close();
+		    os.close();
+		    
+		    boolean confirm = input.delete();
+			if(!confirm)
+				throw new IllegalArgumentException("CREATE: Cannot Delete Input File");
+		}
+		 catch(FileNotFoundException fnfe)
+		 {fnfe.printStackTrace();}
+		 catch(IOException ioe)
+		 {ioe.printStackTrace();}
+	}
+	
+	// Parse Encrypted File
+	// Input: HexFormat bytes file
+	// Output: File (hexFormat) now contains Ciphertext bytes, returns CryptoStore object (keySalt + IV + hashSalt + HMAC)
+	public static CryptoStore parseFile(File hexFormat)
+	{
+		CryptoStore cs = new CryptoStore();
+		
+		try
+		{
+			String filename = hexFormat.toString();
+			File input = new File("hexformat.old");
+			moveFile(hexFormat, input);
+			File out = new File(filename);
+			
+			InputStream is = new FileInputStream(input);
+			OutputStream os = new FileOutputStream(out);
+		    
+		    long len = (long) input.length() - ((SALT_SIZE + IV_SIZE + SALT_SIZE + HMAC_SIZE) * 2);
+		    int numRead = 0;
+		    int c = 0;
+		    String hex;
+		    while(numRead < len)
+		    {
+		    	c = (numRead + 1024) <= len ? 1024 : (int) (len - numRead);
+		    	byte[] content = new byte[c];
+		    	is.read(content);
+		    	hex = new String(content);
+		    	byte[] bytes = toByteArray(hex);
+		    	os.write(bytes);
+		    	numRead += c;
+		    }
+		    
+		    byte[] content = new byte[SALT_SIZE * 2];
+		    is.read(content);
+		    hex = new String(content);
+		    cs.setKeySalt(toByteArray(hex));
+		    
+		    content = new byte[IV_SIZE * 2];
+		    is.read(content);
+		    hex = new String(content);
+		    cs.setIV(toByteArray(hex));
+		    
+		    content = new byte[SALT_SIZE * 2];
+		    is.read(content);
+		    hex = new String(content);
+		    cs.setHashSalt(toByteArray(hex));
+		    
+		    content = new byte[HMAC_SIZE * 2];
+		    is.read(content);
+		    hex = new String(content);
+		    cs.setHMAC(toByteArray(hex));
+		    
+		    is.close();
+		    os.close();
+		    
+		    boolean confirm = input.delete();
+			if(!confirm)
+				throw new IllegalArgumentException("PARSE: Cannot Delete Input File");
+		}
+		 catch(FileNotFoundException fnfe)
+		 {fnfe.printStackTrace();}
+		 catch(IOException ioe)
+		 {ioe.printStackTrace();}
+		 
+		 return cs;
 	}
 	
 	// Test Main
 	public static void main(String[] args)
 	{
-		String text = "The quick brown fox jumps over the lazy dog";
+		File cleartext = new File("cleartext.txt");
 		String password = "This is an extremely long generic key 0123456789";
-		byte[] hashSalt = generateBytes(8);
-		byte[] keySalt = generateBytes(8);
 		
-		String cipherIV = encryptAES(text.getBytes(), password, keySalt);
-		String ciphertext = cipherIV.substring(0, cipherIV.length() - 32);
-		String iv = cipherIV.substring(cipherIV.length() - 32, cipherIV.length());
-		String cleartext = decryptAES(toByteArray(ciphertext), password, keySalt, toByteArray(iv));
+		CryptoStore cs = encryptAES(cleartext, password);
+		cs = calcHMAC(cleartext, password, cs);
 		
-		System.out.println("Plain: " + text);
-		System.out.println("Password: " + password);
-		System.out.println("Hash Salt: " + toHexString(hashSalt));
-		System.out.println("Key Salt: " + toHexString(keySalt));
-		System.out.println("Cipher: " + cipherIV);
-		System.out.println("Cipher Text: " + ciphertext);
-		System.out.println("HMAC:" + calcHMAC(toByteArray(ciphertext), password, hashSalt));
-		System.out.println("Cipher IV: " + iv);
-		System.out.println("Clear Text: " + cleartext);
+		System.out.println("Password:\t" + password);
+		System.out.println("Key Salt:\t" + toHexString(cs.getKeySalt()));
+		System.out.println("Cipher IV:\t" + toHexString(cs.getIV()));
+		System.out.println("Hash Salt:\t" + toHexString(cs.getHashSalt()));
+		System.out.println("HMAC:\t" + toHexString(cs.getHMAC()));
+		
+		createFile(cleartext, cs);
+		cs = null;
+		cs = parseFile(cleartext);
+		
+		CryptoStore dCS = new CryptoStore();
+		dCS.setHashSalt(cs.getHashSalt());
+		dCS = calcHMAC(cleartext, password, dCS);
+		
+		System.out.println("Hash Salt:\t" + toHexString(dCS.getHashSalt()));
+		System.out.println("HMAC:\t" + toHexString(dCS.getHMAC()));
+		
+		decryptAES(cleartext, password, cs);
+		
+		System.out.println("Password:\t" + password);
+		System.out.println("Key Salt:\t" + toHexString(cs.getKeySalt()));
+		System.out.println("Cipher IV:\t" + toHexString(cs.getIV()));
+		System.out.println("Hash Salt:\t" + toHexString(cs.getHashSalt()));
+		System.out.println("HMAC:\t" + toHexString(cs.getHMAC()));
 	}
 }
