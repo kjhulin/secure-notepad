@@ -75,6 +75,11 @@ public class MainWindow extends javax.swing.JFrame {
         initComponents();
         service = new DocsService("SecureNotepad");
 
+        //DEBUG CODE
+        tf_Username.setText("cryptoproject11");
+        tf_Password.setText("cryptography");
+        //END DEBUG CODE
+
         tableView.setModel(dtm);
         dtm.addColumn("Document Name");
         dtm.addColumn("Document ID");
@@ -254,9 +259,10 @@ public class MainWindow extends javax.swing.JFrame {
             currentUser = tf_Username.getText();
             currentPass = tf_Password.getText();
 
-            JOptionPane.showMessageDialog(null, "User: " + currentUser + " logged in with Password: " + currentPass);
+            //unneccessary message dialog below, re-enable if you'd like
+            //JOptionPane.showMessageDialog(null, "User: " + currentUser + " logged in with Password: " + currentPass);
 
-            //LOGGING INTO GOOGLE CODE HERE
+            //COMPLETED: LOGGING INTO GOOGLE CODE HERE
             try
             {
                 service.setUserCredentials(currentUser, currentPass);
@@ -268,7 +274,7 @@ public class MainWindow extends javax.swing.JFrame {
             
             /*****************************************/
 
-            //TO DO: ADD FILLING OF TABLE HERE
+            //COMPLETED: ADD FILLING OF TABLE HERE
 
             try
             {
@@ -279,7 +285,7 @@ public class MainWindow extends javax.swing.JFrame {
 
                 for (DocumentListEntry entry : feed.getEntries())
                 {
-                    System.out.println(entry.getTitle().getPlainText() + " || " + entry.getResourceId());
+                    //System.out.println(entry.getTitle().getPlainText() + " || " + entry.getResourceId());
                     dtm.addRow(new Object[] {entry.getTitle().getPlainText(), entry.getResourceId()});
                 }
             }
@@ -311,20 +317,62 @@ public class MainWindow extends javax.swing.JFrame {
                 String filePass = tf_FilePassword.getText();
                 String fileName = tableView.getValueAt(indexSelected, 0).toString();
                 String fileID = tableView.getValueAt(indexSelected, 1).toString();
+                System.out.println(fileName + " || " + fileID.substring(9));
 
-                updateFileWindow ufw = new updateFileWindow();
-                ufw.setVisible(true);
-                ufw.setFileName(fileName);
+                //COMPLETED: DOWNLOAD FILE FROM GOOGLE
+                String downloadURL = ("https://docs.google.com/feeds/download/documents/Export?exportFormat=txt&id="+
+                        fileID.substring(9)); //substring(8) removes "document:"
+                MediaContent mc = new MediaContent();
+                mc.setUri(downloadURL);
+                try
+                {
+                    MediaSource ms = service.getMedia(mc);
 
-                //TO DO: DOWNLOAD FILE FROM GOOGLE
+                    InputStream inStream = null;
+                    FileOutputStream outStream = null;
+                    try
+                    {
+                        inStream = ms.getInputStream();
+                        outStream = new FileOutputStream(fileName + ".txt");
+
+                        int c;
+                        while ((c = inStream.read()) != -1)
+                        {
+                            outStream.write(c);
+                        }
+                    }
+                    finally
+                    {
+                        if (inStream != null)
+                        {
+                            inStream.close();
+                        }
+                        if (outStream != null)
+                        {
+                            outStream.flush();
+                            outStream.close();
+                        }
+                    }
+                }catch (MalformedURLException m) {} catch (ServiceException s) {} catch (IOException i) {}
 
                 /********************************/
 
                 //TO DO: CONFIRM HMAC IS CORRECT
 
+                //there will be an IF-ELSE statement here.
+                //if hmac incorrect, display an error
+                //else, continue with business as usual
+
                 /********************************/
 
                 //TO DO: DECRYPT FILE USING filePass AND fileID
+
+                /********************************/
+
+                //Open Update File Window for Editing
+                updateFileWindow ufw = new updateFileWindow();
+                ufw.setVisible(true);
+                ufw.setFileName(fileName);
             }
         }
     }//GEN-LAST:event_btn_UpdateFileActionPerformed
