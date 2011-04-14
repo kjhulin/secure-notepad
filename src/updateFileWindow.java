@@ -19,6 +19,7 @@ import javax.swing.text.Document;
 public class updateFileWindow extends javax.swing.JFrame {
 
     String fileName = "";
+    String fileText = "";
 
     /** Creates new form updateFileWindow */
     public updateFileWindow() {
@@ -36,7 +37,7 @@ public class updateFileWindow extends javax.swing.JFrame {
 
         jLabel3 = new javax.swing.JLabel();
         tf_FilePassword = new javax.swing.JTextField();
-        btn_AddFile = new javax.swing.JButton();
+        btn_UpdateFile = new javax.swing.JButton();
         tf_FileContent = new javax.swing.JTextField();
         jLabel1 = new javax.swing.JLabel();
         cbox_Password = new java.awt.Checkbox();
@@ -52,10 +53,10 @@ public class updateFileWindow extends javax.swing.JFrame {
 
         jLabel3.setText("File Password:");
 
-        btn_AddFile.setText("Add File");
-        btn_AddFile.addActionListener(new java.awt.event.ActionListener() {
+        btn_UpdateFile.setText("Update File");
+        btn_UpdateFile.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                btn_AddFileActionPerformed(evt);
+                btn_UpdateFileActionPerformed(evt);
             }
         });
 
@@ -84,7 +85,7 @@ public class updateFileWindow extends javax.swing.JFrame {
                                 .addComponent(tf_FilePassword, javax.swing.GroupLayout.DEFAULT_SIZE, 562, Short.MAX_VALUE)))
                         .addGap(23, 23, 23))
                     .addGroup(layout.createSequentialGroup()
-                        .addComponent(btn_AddFile, javax.swing.GroupLayout.DEFAULT_SIZE, 639, Short.MAX_VALUE)
+                        .addComponent(btn_UpdateFile, javax.swing.GroupLayout.DEFAULT_SIZE, 639, Short.MAX_VALUE)
                         .addGap(25, 25, 25))))
         );
         layout.setVerticalGroup(
@@ -101,23 +102,27 @@ public class updateFileWindow extends javax.swing.JFrame {
                     .addComponent(jLabel3)
                     .addComponent(tf_FilePassword, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 63, Short.MAX_VALUE)
-                .addComponent(btn_AddFile)
+                .addComponent(btn_UpdateFile)
                 .addGap(22, 22, 22))
         );
 
         pack();
     }// </editor-fold>//GEN-END:initComponents
 
-    private void btn_AddFileActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btn_AddFileActionPerformed
+    private void btn_UpdateFileActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btn_UpdateFileActionPerformed
 
         //make sure all boxes have been filled out
         if (tf_FileContent.getText().equals(""))
         {
             JOptionPane.showMessageDialog(null, "Please enter the content of the file");
         } 
-        else if (tf_FilePassword.getText().equals(""))
+        else if (tf_FilePassword.getText().equals("") && cbox_Password.getState() == true)
         {
-            JOptionPane.showMessageDialog(null, "Please enter the password of the file");
+            JOptionPane.showMessageDialog(null, "Please enter the new password of the file");
+
+            //TO DO: RE-ENCRYPT FILE WITH THIS NEW PASSWORD
+            String newPass = tf_FilePassword.getText();
+
         }
         else //get here only if everything has been filled out properly
         {
@@ -127,9 +132,8 @@ public class updateFileWindow extends javax.swing.JFrame {
 
             //TO DO: ADD FILE TO GOOGLE DOC SERVER
 
-
         }
-}//GEN-LAST:event_btn_AddFileActionPerformed
+}//GEN-LAST:event_btn_UpdateFileActionPerformed
 
     private void formWindowClosed(java.awt.event.WindowEvent evt) {//GEN-FIRST:event_formWindowClosed
 
@@ -151,13 +155,15 @@ public class updateFileWindow extends javax.swing.JFrame {
     }
 
 
-     public void setFileName(String fname)
+     public void setFileProperties(String fname, String ftext)
     {
         fileName = fname;
+        fileText = ftext;
+        tf_FileContent.setText(fileText);
     }
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
-    private javax.swing.JButton btn_AddFile;
+    private javax.swing.JButton btn_UpdateFile;
     private java.awt.Checkbox cbox_Password;
     private javax.swing.JLabel jLabel1;
     private javax.swing.JLabel jLabel3;
