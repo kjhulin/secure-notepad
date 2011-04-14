@@ -119,17 +119,22 @@ public class updateFileWindow extends javax.swing.JFrame {
         else if (tf_FilePassword.getText().equals("") && cbox_Password.getState() == true)
         {
             JOptionPane.showMessageDialog(null, "Please enter the new password of the file");
-
+        }
+        else if (cbox_Password.getState() == true)
+        {
             //TO DO: RE-ENCRYPT FILE WITH THIS NEW PASSWORD
             String newPass = tf_FilePassword.getText();
-
         }
-        else //get here only if everything has been filled out properly
+        else //update the file now
         {
             //recall that fileName is set when update button is pressed in Main Window
             String fileContent = tf_FileContent.getText();
             String filePassword = tf_FilePassword.getText();
 
+            //TO DO: DELETE OLD VERSION OF FILE FROM GOOGLE DOC SERVER
+
+            /***********************************/
+            
             //TO DO: ADD FILE TO GOOGLE DOC SERVER
 
         }
