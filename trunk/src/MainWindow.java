@@ -1,5 +1,52 @@
 //IMPORTS EVERYWHERE
 
+
+import com.google.gdata.client.GoogleAuthTokenFactory.UserToken;
+import com.google.gdata.client.GoogleService;
+import com.google.gdata.client.Query;
+import com.google.gdata.client.docs.DocsService;
+import com.google.gdata.data.MediaContent;
+import com.google.gdata.data.PlainTextConstruct;
+import com.google.gdata.data.acl.AclEntry;
+import com.google.gdata.data.acl.AclFeed;
+import com.google.gdata.data.acl.AclRole;
+import com.google.gdata.data.acl.AclScope;
+import com.google.gdata.data.docs.DocumentEntry;
+import com.google.gdata.data.docs.DocumentListEntry;
+import com.google.gdata.data.docs.DocumentListFeed;
+import com.google.gdata.data.docs.FolderEntry;
+import com.google.gdata.data.docs.PresentationEntry;
+import com.google.gdata.data.docs.RevisionFeed;
+import com.google.gdata.data.docs.SpreadsheetEntry;
+import com.google.gdata.data.media.MediaSource;
+import com.google.gdata.util.AuthenticationException;
+import com.google.gdata.util.ServiceException;
+
+import com.google.gdata.data.Link;
+import com.google.gdata.data.MediaContent;
+import com.google.gdata.data.acl.AclEntry;
+import com.google.gdata.data.acl.AclFeed;
+import com.google.gdata.data.acl.AclRole;
+import com.google.gdata.data.acl.AclScope;
+import com.google.gdata.data.docs.DocumentListEntry;
+import com.google.gdata.data.docs.DocumentListFeed;
+import com.google.gdata.data.docs.RevisionEntry;
+import com.google.gdata.data.docs.RevisionFeed;
+import com.google.gdata.util.AuthenticationException;
+import com.google.gdata.util.ServiceException;
+
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.PrintStream;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.logging.ConsoleHandler;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
@@ -17,6 +64,7 @@ import javax.swing.text.Document;
 
 
 public class MainWindow extends javax.swing.JFrame {
+    public DocsService service;
     DefaultTableModel dtm = new DefaultTableModel();
     String currentUser = "";
     String currentPass = "";
@@ -25,6 +73,7 @@ public class MainWindow extends javax.swing.JFrame {
     /** Creates new form MainWindow */
     public MainWindow() {
         initComponents();
+        service = new DocsService("SecureNotepad");
 
         tableView.setModel(dtm);
         dtm.addColumn("Document Name");
@@ -207,14 +256,36 @@ public class MainWindow extends javax.swing.JFrame {
 
             JOptionPane.showMessageDialog(null, "User: " + currentUser + " logged in with Password: " + currentPass);
 
-            //TO DO: ADD LOGGING INTO GOOGLE CODE HERE
-
+            //LOGGING INTO GOOGLE CODE HERE
+            try
+            {
+                service.setUserCredentials(currentUser, currentPass);
+            } 
+            catch (AuthenticationException e)
+            {
+                System.out.println("Invalid Username/Password Combination");
+            }
+            
             /*****************************************/
 
             //TO DO: ADD FILLING OF TABLE HERE
-            //utilize dtm.addRow(new Object[] {document[i], documentPass[i]})
 
-            dtm.addRow(new Object[] {"example", "one"});
+            try
+            {
+                DocumentListFeed feed = null;
+
+                URL url = new URL("https://docs.google.com/feeds/default/private/full/-/document");
+                feed = service.getFeed(url, DocumentListFeed.class);
+
+                for (DocumentListEntry entry : feed.getEntries())
+                {
+                    System.out.println(entry.getTitle().getPlainText() + " || " + entry.getResourceId());
+                    dtm.addRow(new Object[] {entry.getTitle().getPlainText(), entry.getResourceId()});
+                }
+            }
+            catch (MalformedURLException m) {} catch (ServiceException s) {} catch (IOException i) {}
+
+            //utilize dtm.addRow(new Object[] {document[i], documentPass[i]})
         }
     }//GEN-LAST:event_btn_LoginActionPerformed
 
