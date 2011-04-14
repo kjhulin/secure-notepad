@@ -1,3 +1,0 @@
-# GData Kind Adaptors for http://schemas.google.com/finance/2007#portfolio
-com.google.gdata.data.finance.PortfolioEntry
-com.google.gdata.data.finance.PortfolioFeed

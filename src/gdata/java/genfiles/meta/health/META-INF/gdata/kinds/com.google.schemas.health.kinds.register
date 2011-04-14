@@ -1,3 +1,0 @@
-# GData Kind Adaptors for http://schemas.google.com/health/kinds#register
-com.google.gdata.data.health.RegisterFeed
-com.google.gdata.data.health.RegisterEntry

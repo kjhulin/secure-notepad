@@ -1,3 +1,0 @@
-# GData Kind Adaptors for http://schemas.google.com/books/2008#volume
-com.google.gdata.data.books.VolumeEntry
-com.google.gdata.data.books.VolumeFeed

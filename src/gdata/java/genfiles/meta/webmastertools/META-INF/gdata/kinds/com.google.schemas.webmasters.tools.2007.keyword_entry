@@ -1,3 +1,0 @@
-# GData Kind Adaptors for http://schemas.google.com/webmasters/tools/2007#keyword_entry
-com.google.gdata.data.webmastertools.KeywordEntry
-com.google.gdata.data.webmastertools.KeywordsFeed
