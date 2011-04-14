@@ -466,8 +466,7 @@ public class DocumentList {
     newDocument.setFile(file, mimeType);
     newDocument.setTitle(new PlainTextConstruct(title));
 
-    return service
-        .insert(buildUrl(URL_DEFAULT + URL_DOCLIST_FEED), newDocument);
+    return service.insert(buildUrl(URL_DEFAULT + URL_DOCLIST_FEED), newDocument);
   }
 
   /**
@@ -534,12 +533,14 @@ public class DocumentList {
    */
   public void downloadFile(URL exportUrl, String filepath) throws IOException,
       MalformedURLException, ServiceException, DocumentListException {
+      System.out.println("In download file");
     if (exportUrl == null || filepath == null) {
       throw new DocumentListException("null passed in for required parameters");
     }
 
     MediaContent mc = new MediaContent();
-    mc.setUri(exportUrl.toString());
+    mc.setUri(mc.getUri());
+    System.out.println(exportUrl.toString());
     MediaSource ms = service.getMedia(mc);
 
     InputStream inStream = null;
@@ -834,7 +835,7 @@ public class DocumentList {
     } else if (resourceId.indexOf(":") != -1) {
       return resourceId.substring(resourceId.lastIndexOf(":") + 1);
     }
-    throw new DocumentListException("Bad resourceId");
+    throw new DocumentListException("Bad resourceId-suffix");
   }
 
   /**
@@ -855,7 +856,7 @@ public class DocumentList {
     } else if (resourceId.indexOf(":") != -1) {
       return resourceId.substring(0, resourceId.indexOf(":"));
     } else {
-      throw new DocumentListException("Bad resourceId");
+      throw new DocumentListException("Bad resourceId-prefix");
     }
   }
 

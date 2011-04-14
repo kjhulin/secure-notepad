@@ -180,7 +180,7 @@ public class Main {
    * Constructor
    *
    * @param outputStream Stream to print output to.
-   * @throws DocumentListException
+   * @throws DocumentListExceptionDocumentListFeed
    */
   public Main(PrintStream outputStream, String appName, String host)
       throws DocumentListException {
@@ -326,6 +326,7 @@ public class Main {
       ServiceException, DocumentListException {
     if (args.length == 3) {
       String docType = documentList.getResourceIdPrefix(args[1]);
+      String resourceID = documentList.getResourceIdSuffix(args[1]);
       if (docType.equals("spreadsheet")) {
         String format = documentList.getDownloadFormat(args[1],
             getTypeFromFilename(args[2]));
@@ -337,7 +338,8 @@ public class Main {
       } else if (docType.equals("document")) {
         String format = documentList.getDownloadFormat(args[1],
             getTypeFromFilename(args[2]));
-        documentList.downloadDocument(args[1], args[2], format);
+        //CHANGED
+        documentList.downloadDocument(resourceID, args[2], format);
       } else {
         MediaContent mc = (MediaContent) documentList.getDocsListEntry(args[1]).getContent();
         String fileExtension = mc.getMimeType().getSubType();
