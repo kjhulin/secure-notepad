@@ -1,5 +1,8 @@
 //IMPORTS EVERYWHERE
 
+import com.google.gdata.client.docs.DocsService;
+import com.google.gdata.data.PlainTextConstruct;
+import com.google.gdata.data.docs.DocumentEntry;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
@@ -15,11 +18,17 @@ import javax.swing.event.DocumentListener;
 import javax.swing.text.BadLocationException;
 import javax.swing.text.Document;
 
+import com.google.gdata.data.docs.DocumentListEntry;
+import java.net.URL;
+
 
 public class createFileWindow extends javax.swing.JFrame {
+    DocsService service;
+
 
     /** Creates new form createFileWindow */
-    public createFileWindow() {
+    public createFileWindow(DocsService s) {
+        service = s;
         initComponents();
     }
 
@@ -110,7 +119,7 @@ public class createFileWindow extends javax.swing.JFrame {
         pack();
     }// </editor-fold>//GEN-END:initComponents
 
-    private void btn_AddFileActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btn_AddFileActionPerformed
+    private void btn_AddFileActionPerformed(java.awt.event.ActionEvent evt){//GEN-FIRST:event_btn_AddFileActionPerformed
 
         //make sure all boxes have been filled out
         if(tf_FileName.getText().equals((""))) {
@@ -126,6 +135,41 @@ public class createFileWindow extends javax.swing.JFrame {
             String filePassword = tf_FilePassword.getText();
 
             //TO DO: ADD FILE TO GOOGLE DOC SERVER
+
+
+            //TODO: modify constructor to pass in array of filenames that already exists
+            //TODO: check if specified filename already exists
+            //Delete old file(check if exists?)
+            try{
+    Random rand = new Random();
+    File file;
+
+    do{
+    String fname = "TMP"+rand.nextInt(Integer.MAX_VALUE)+".txt";
+    file = new File(fname);
+    }while(file.isFile());
+System.out.println("tmp file " + file.getName());
+    file.createNewFile();
+    System.out.println("File created");
+
+    FileOutputStream fos = new FileOutputStream(file);
+    fos.write(fileContent.getBytes());
+    fos.close();
+System.out.println("Contents written");
+
+    String mimeType = DocumentListEntry.MediaType.fromFileName(file.getName()).getMimeType();
+    DocumentEntry newDocument = new DocumentEntry();
+    newDocument.setFile(file, mimeType);
+    newDocument.setTitle(new PlainTextConstruct(fileName));
+    
+    service.insert(new URL("https://docs.google.com/feeds/default/private/full"), newDocument);
+    file.delete();
+    }catch(Exception e){
+        System.err.println("Error writing to file");
+    }
+    
+    this.dispose();
+
 
 
         }
@@ -145,7 +189,7 @@ public class createFileWindow extends javax.swing.JFrame {
     public static void main(String args[]) {
         java.awt.EventQueue.invokeLater(new Runnable() {
             public void run() {
-                new createFileWindow().setVisible(true);
+                new createFileWindow(null).setVisible(true);
             }
         });
     }
