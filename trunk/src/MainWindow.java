@@ -317,7 +317,7 @@ public class MainWindow extends javax.swing.JFrame {
                 String filePass = tf_FilePassword.getText();
                 String fileName = tableView.getValueAt(indexSelected, 0).toString();
                 String fileID = tableView.getValueAt(indexSelected, 1).toString();
-                System.out.println(fileName + " || " + fileID.substring(9));
+                String fileText = "";
 
                 //COMPLETED: DOWNLOAD FILE FROM GOOGLE
                 String downloadURL = ("https://docs.google.com/feeds/download/documents/Export?exportFormat=txt&id="+
@@ -367,12 +367,24 @@ public class MainWindow extends javax.swing.JFrame {
 
                 //TO DO: DECRYPT FILE USING filePass AND fileID
 
-                /********************************/
+                //reading of the file's content
+                try
+                {
+                    BufferedReader br = new BufferedReader(new FileReader(fileName + ".txt"));
+                    String str;
+                    while ((str = br.readLine()) != null)
+                    {
+                        fileText += (str);
+                    }
+                    br.close();
+                } catch (IOException e) {}
 
+
+                /********************************/
                 //Open Update File Window for Editing
                 updateFileWindow ufw = new updateFileWindow();
                 ufw.setVisible(true);
-                ufw.setFileName(fileName);
+                ufw.setFileProperties(fileName, fileText);
             }
         }
     }//GEN-LAST:event_btn_UpdateFileActionPerformed
