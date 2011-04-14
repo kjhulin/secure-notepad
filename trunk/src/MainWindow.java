@@ -406,7 +406,14 @@ public class MainWindow extends javax.swing.JFrame {
 
                 /********************************/
                 
-                //TO DO: DELETE FILE FROM GOOGLE
+                //COMPLETED: DELETE FILE FROM GOOGLE
+                try
+                {
+                    URL delURL = new URL("https://docs.google.com/feeds/default/private/full/" + fileID);
+
+                    service.delete(delURL, service.getEntry(delURL, DocumentListEntry.class).getEtag());
+                }
+                catch (MalformedURLException m) {} catch (ServiceException s) {} catch (IOException i) {}
             }
         }
     }//GEN-LAST:event_btn_DeleteSelectedFileActionPerformed
