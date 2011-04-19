@@ -1,5 +1,9 @@
 //IMPORTS EVERYWHERE
 
+import com.google.gdata.client.docs.DocsService;
+import com.google.gdata.data.PlainTextConstruct;
+import com.google.gdata.data.docs.DocumentEntry;
+import com.google.gdata.data.docs.DocumentListEntry;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
@@ -8,6 +12,7 @@ import java.util.*;
 import javax.swing.event.*;
 import java.io.*;
 import java.awt.Color;
+import java.net.URL;
 import javax.swing.ListSelectionModel;
 import javax.swing.border.LineBorder;
 import javax.swing.event.DocumentEvent;
@@ -20,10 +25,12 @@ public class updateFileWindow extends javax.swing.JFrame {
 
     String fileName = "";
     String fileText = "";
+    DocsService service;
 
     /** Creates new form updateFileWindow */
-    public updateFileWindow() {
+    public updateFileWindow(DocsService s) {
         initComponents();
+        service  = s;
     }
 
     /** This method is called from within the constructor to
@@ -134,8 +141,39 @@ public class updateFileWindow extends javax.swing.JFrame {
             //TO DO: DELETE OLD VERSION OF FILE FROM GOOGLE DOC SERVER
 
             /***********************************/
-            
-            //TO DO: ADD FILE TO GOOGLE DOC SERVER
+
+            //upload file in google docs
+            try{
+                Random rand = new Random();
+                File file;
+
+                do{
+                    String fname = "TMP"+rand.nextInt(Integer.MAX_VALUE)+".txt";
+                    file = new File(fname);
+                }while(file.isFile());
+
+                System.out.println("tmp file " + file.getName());
+                file.createNewFile();
+                System.out.println("File created");
+
+                FileOutputStream fos = new FileOutputStream(file);
+                fos.write(fileContent.getBytes());
+                fos.close();
+                System.out.println("Contents written");
+
+                String mimeType = DocumentListEntry.MediaType.fromFileName(file.getName()).getMimeType();
+                DocumentEntry newDocument = new DocumentEntry();
+                newDocument.setFile(file, mimeType);
+                newDocument.setTitle(new PlainTextConstruct(fileName));
+
+                service.insert(new URL("https://docs.google.com/feeds/default/private/full"), newDocument);
+                file.delete();
+            }catch(Exception e){
+                System.err.println("Error writing to file");
+            }
+
+        this.dispose();
+
 
         }
 }//GEN-LAST:event_btn_UpdateFileActionPerformed
@@ -154,7 +192,7 @@ public class updateFileWindow extends javax.swing.JFrame {
     public static void main(String args[]) {
         java.awt.EventQueue.invokeLater(new Runnable() {
             public void run() {
-                new updateFileWindow().setVisible(true);
+                new updateFileWindow(null).setVisible(true);
             }
         });
     }
