@@ -347,6 +347,17 @@ public class MainWindow extends javax.swing.JFrame {
                         int c;
                         int count = 0;
                         //System.out.println();
+
+                        /*
+                         * Note: for some reason, Google always gives us three
+                         * extra bytes at the top of any file that we
+                         * read in. This causes major problems for the parsing
+                         * methods we use, so we skip the first 3 bytes
+                         * we read. If for some reason these 3 bytes fail to appear
+                         * our program will break. Note that we do not give
+                         * Google these 3 bytes when we submit our file; they are
+                         * always added upon download.
+                         */
                         while ((c = inStream.read()) != -1)
                         {
                             if (count < 3)
@@ -417,7 +428,7 @@ public class MainWindow extends javax.swing.JFrame {
                     //Open Update File Window for Editing
                     updateFileWindow ufw = new updateFileWindow(service);
                     ufw.setVisible(true);
-                    ufw.setFileProperties(fileName, fileText, fileID );
+                    ufw.setFileProperties(fileName, fileText, fileID, filePass);
 
                     /********************************/
                 }
@@ -449,19 +460,37 @@ public class MainWindow extends javax.swing.JFrame {
                 String filePass = tf_FilePassword.getText();
                 String fileName = tableView.getValueAt(indexSelected, 0).toString();
                 String fileID = tableView.getValueAt(indexSelected, 1).toString();
+                File deleteFile = new File(fileName);
 
                 //TO DO: CONFIRM HMAC IS CORRECT
 
-                /********************************/
-                
-                //COMPLETED: DELETE FILE FROM GOOGLE
-                try
-                {
-                    URL delURL = new URL("https://docs.google.com/feeds/default/private/full/" + fileID);
+               
+                CryptoStore CSone = Crypto.parseFile(deleteFile);
+                CryptoStore CStwo = new CryptoStore();
+                CStwo.setHashSalt(CSone.getHashSalt());
+                CStwo = Crypto.calcHMAC(deleteFile, filePass, CStwo);
+                String CSOneHex = Crypto.toHexString(CSone.getHMAC());
+                String CSTwoHex = Crypto.toHexString(CStwo.getHMAC());
 
-                    service.delete(delURL, service.getEntry(delURL, DocumentListEntry.class).getEtag());
+                if (!CSOneHex.equals(CSTwoHex))
+                {
+                    System.out.println("Wrong password/HMACs not matching");
                 }
-                catch (MalformedURLException m) {} catch (ServiceException s) {} catch (IOException i) {}
+                else
+                {
+                    System.out.println("HMACS match + Password Correct");
+
+                    /********************************/
+
+                    //COMPLETED: DELETE FILE FROM GOOGLE
+                    try
+                    {
+                        URL delURL = new URL("https://docs.google.com/feeds/default/private/full/" + fileID);
+
+                        service.delete(delURL, service.getEntry(delURL, DocumentListEntry.class).getEtag());
+                    }
+                    catch (MalformedURLException m) {} catch (ServiceException s) {} catch (IOException i) {}
+                }
             }
         }
     }//GEN-LAST:event_btn_DeleteSelectedFileActionPerformed

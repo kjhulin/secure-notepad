@@ -24,6 +24,7 @@ import javax.swing.text.Document;
 public class updateFileWindow extends javax.swing.JFrame {
 
     String fileName = "";
+    String filePass = "";
     String fileText = "";
     DocsService service;
     String fileID;
@@ -127,18 +128,14 @@ public class updateFileWindow extends javax.swing.JFrame {
         {
             JOptionPane.showMessageDialog(null, "Please enter the new password of the file");
         }
-        else if (cbox_Password.getState() == true)
-        {
-            //TO DO: RE-ENCRYPT FILE WITH THIS NEW PASSWORD
-            String newPass = tf_FilePassword.getText();
-        }
         else //update the file now
         {
+            if (cbox_Password.getState() == true)
+            {
+                filePass = tf_FilePassword.getText();
+            }
             //recall that fileName is set when update button is pressed in Main Window
             String fileContent = tf_FileContent.getText();
-            String filePassword = tf_FilePassword.getText();
-
-            //TODO: Verify that user knows password for file deletion
 
             //Delete old version from gdocs
             try{
@@ -150,22 +147,39 @@ public class updateFileWindow extends javax.swing.JFrame {
             }
             /***********************************/
 
-            //upload file in google docs
-            try{/*
-                String mimeType = DocumentListEntry.MediaType.fromFileName(file.getName()).getMimeType();
+            //TO DO: Make changes to the file
+            File newFile = new File(fileName);
+
+            //creation of the cleartext file
+            try
+            {
+                FileWriter fstream = new FileWriter(newFile);
+                BufferedWriter out = new BufferedWriter(fstream);
+                out.write(fileContent);
+                out.close();
+            }catch (IOException e) {System.out.println("IO Exception Hit, file" +
+                    " may not have been created properly");}
+
+            //calculate the CS and add HMAC + Salt to it
+            CryptoStore newCS = Crypto.encryptAES(newFile, filePass);
+            newCS = Crypto.calcHMAC(newFile, filePass, newCS);
+
+            //replace old, non-HMAC+Salt file with new file
+            Crypto.createFile(newFile, newCS);
+
+            try
+            {
+                System.out.println("Contents written");
+
+                String mimeType = DocumentListEntry.MediaType.fromFileName(newFile.getName()).getMimeType();
                 DocumentEntry newDocument = new DocumentEntry();
-                newDocument.setFile(file, mimeType);
+                newDocument.setFile(newFile, mimeType);
                 newDocument.setTitle(new PlainTextConstruct(fileName));
 
                 service.insert(new URL("https://docs.google.com/feeds/default/private/full"), newDocument);
-                file.delete();*/
-            }catch(Exception e){
-                System.err.println("Error writing to file");
-            }
-
-        this.dispose();
-
-
+                //newFile.delete();
+            }catch(Exception e){System.err.println("Error writing to file");}
+            this.dispose();
         }
 }//GEN-LAST:event_btn_UpdateFileActionPerformed
 
@@ -189,12 +203,13 @@ public class updateFileWindow extends javax.swing.JFrame {
     }
 
 
-     public void setFileProperties(String fname, String ftext, String fid)
+     public void setFileProperties(String fname, String ftext, String fid, String fpass)
     {
         fileName = fname;
         fileText = ftext;
         tf_FileContent.setText(fileText);
         fileID = fid;
+        filePass = fpass;
     }
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
