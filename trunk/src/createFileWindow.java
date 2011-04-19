@@ -130,48 +130,62 @@ public class createFileWindow extends javax.swing.JFrame {
             JOptionPane.showMessageDialog(null, "Please enter the password of the file");
         } else //get here only if everything has been filled out properly
         {
-            String fileName = tf_FileName.getText();
+            String fileName = tf_FileName.getText() + ".txt";
             String fileContent = tf_FileContent.getText();
             String filePassword = tf_FilePassword.getText();
+            File newFile = new File(fileName);
+            //TO DO: ENCRYPT FILE PROPERLY (add hash/salt/etc)
 
-            //TO DO: ADD FILE TO GOOGLE DOC SERVER
+            //creation of the cleartext file
+            try
+            {
+                FileWriter fstream = new FileWriter(newFile);
+                BufferedWriter out = new BufferedWriter(fstream);
+                out.write(fileContent);
+                out.close();
+            }catch (IOException e) {System.out.println("IO Exception Hit, file" +
+                    " may not have been created properly");}
 
+            //calculate the CS and add HMAC + Salt to it
+            CryptoStore newCS = Crypto.encryptAES(newFile, filePassword);
+            newCS = Crypto.calcHMAC(newFile, filePassword, newCS);
 
+            //replace old, non-HMAC+Salt file with new file
+            Crypto.createFile(newFile, newCS);
+            
             //TODO: modify constructor to pass in array of filenames that already exists
             //TODO: check if specified filename already exists
             //Delete old file(check if exists?)
-            try{
-        Random rand = new Random();
-        File file;
+            try
+            {
+                Random rand = new Random();
+                File file;
 
-        do{
-        String fname = "TMP"+rand.nextInt(Integer.MAX_VALUE)+".txt";
-        file = new File(fname);
-        }while(file.isFile());
-    System.out.println("tmp file " + file.getName());
-        file.createNewFile();
-        System.out.println("File created");
+                do
+                {
+                    String fname = "TMP"+rand.nextInt(Integer.MAX_VALUE)+".txt";
+                    file = new File(fname);
+                }while(file.isFile());
+                System.out.println("tmp file " + file.getName());
+                file.createNewFile();
+                System.out.println("File created");
 
-        FileOutputStream fos = new FileOutputStream(file);
-        fos.write(fileContent.getBytes());
-        fos.close();
-    System.out.println("Contents written");
+                FileOutputStream fos = new FileOutputStream(file);
+                fos.write(fileContent.getBytes());
+                fos.close();
+                System.out.println("Contents written");
 
-        String mimeType = DocumentListEntry.MediaType.fromFileName(file.getName()).getMimeType();
-        DocumentEntry newDocument = new DocumentEntry();
-        newDocument.setFile(file, mimeType);
-        newDocument.setTitle(new PlainTextConstruct(fileName));
+                String mimeType = DocumentListEntry.MediaType.fromFileName(file.getName()).getMimeType();
+                DocumentEntry newDocument = new DocumentEntry();
+                newDocument.setFile(file, mimeType);
+                newDocument.setTitle(new PlainTextConstruct(fileName));
 
-        service.insert(new URL("https://docs.google.com/feeds/default/private/full"), newDocument);
-        file.delete();
-        }catch(Exception e){
-            System.err.println("Error writing to file");
-        }
+                service.insert(new URL("https://docs.google.com/feeds/default/private/full"), newDocument);
+                file.delete();
+            }
+            catch(Exception e){System.err.println("Error writing to file");}
     
-    this.dispose();
-
-
-
+            this.dispose();
         }
 }//GEN-LAST:event_btn_AddFileActionPerformed
 
