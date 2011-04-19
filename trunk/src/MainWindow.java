@@ -64,8 +64,8 @@ import javax.swing.text.Document;
 
 
 public class MainWindow extends javax.swing.JFrame {
-    public DocsService service;
-    DefaultTableModel dtm = new DefaultTableModel();
+    public static DocsService service;
+    public static DefaultTableModel dtm = new DefaultTableModel();
     String currentUser = "";
     String currentPass = "";
     String publicFileName = "";
@@ -76,8 +76,8 @@ public class MainWindow extends javax.swing.JFrame {
         service = new DocsService("SecureNotepad");
 
         //DEBUG CODE
-        tf_Username.setText("cryptoproject11");
-        tf_Password.setText("cryptography");
+        tf_Username.setText("");
+        tf_Password.setText("");
         //END DEBUG CODE
 
         tableView.setModel(dtm);
@@ -273,9 +273,7 @@ public class MainWindow extends javax.swing.JFrame {
             }
             
             /*****************************************/
-            //FILLING TABLE
-
-            //COMPLETED: ADD FILLING OF TABLE HERE
+            //COMPLETED: FILLING OF TABLE HERE
 
             try
             {
@@ -288,18 +286,11 @@ public class MainWindow extends javax.swing.JFrame {
                 }
                 for (DocumentListEntry entry : feed.getEntries())
                 {
-
-
-                    System.out.println(entry.getTitle().getPlainText() + " || " + entry.getResourceId());
-
                     //System.out.println(entry.getTitle().getPlainText() + " || " + entry.getResourceId());
-
                     dtm.addRow(new Object[] {entry.getTitle().getPlainText(), entry.getResourceId()});
                 }
             }
             catch (MalformedURLException m) {} catch (ServiceException s) {} catch (IOException i) {}
-
-            //utilize dtm.addRow(new Object[] {document[i], documentPass[i]})
         }
     }//GEN-LAST:event_btn_LoginActionPerformed
 
@@ -389,8 +380,6 @@ public class MainWindow extends javax.swing.JFrame {
 
                 //TO DO: CONFIRM HMAC IS CORRECT
 
-
-
                 CryptoStore CSone = Crypto.parseFile(updateFile);
                 CryptoStore CStwo = new CryptoStore();
                 CStwo.setHashSalt(CSone.getHashSalt());
@@ -400,11 +389,11 @@ public class MainWindow extends javax.swing.JFrame {
 
                 if (!CSOneHex.equals(CSTwoHex))
                 {
-                    System.out.println("Wrong password/HMACs not matching");
+                    JOptionPane.showMessageDialog(null, "Wrong Password / HMACs do not match");
                 }
                 else
                 {
-                    System.out.println("HMACS match + Password Correct");
+                    //System.out.println("HMACS match + Password Correct");
 
                     /********************************/
 
@@ -535,11 +524,11 @@ public class MainWindow extends javax.swing.JFrame {
 
                 if (!CSOneHex.equals(CSTwoHex))
                 {
-                    System.out.println("Wrong password/HMACs not matching");
+                    JOptionPane.showMessageDialog(null, "Wrong password / HMACs do not match");
                 }
                 else
                 {
-                    System.out.println("HMACS match + Password Correct");
+                    //System.out.println("HMACS match + Password Correct");
 
                     /********************************/
 
@@ -549,12 +538,18 @@ public class MainWindow extends javax.swing.JFrame {
                         URL delURL = new URL("https://docs.google.com/feeds/default/private/full/" + fileID);
 
                         service.delete(delURL, service.getEntry(delURL, DocumentListEntry.class).getEtag());
+
+                        JOptionPane.showMessageDialog(null, "File successfully deleted from Google Docs");
                     }
-                    catch (MalformedURLException m) {} catch (ServiceException s) {} catch (IOException i) {}
+                    catch (MalformedURLException m) {JOptionPane.showMessageDialog(null, "MalformedURLException: File NOT deleted from Google Docs");}
+                    catch (ServiceException s) {JOptionPane.showMessageDialog(null, "ServiceException: File NOT deleted from Google Docs");}
+                    catch (IOException i) {JOptionPane.showMessageDialog(null, "IOException: File NOT deleted from Google Docs");}
                 }
 
                 if (deleteFile.exists())
                     deleteFile.delete(); //gets rid of local copy of file
+
+                refreshTable();
             }
         }
     }//GEN-LAST:event_btn_DeleteSelectedFileActionPerformed
@@ -568,6 +563,26 @@ public class MainWindow extends javax.swing.JFrame {
                 new MainWindow().setVisible(true);
             }
         });
+    }
+
+    public static void refreshTable()
+    {
+            try
+            {
+                DocumentListFeed feed = null;
+
+                URL url = new URL("https://docs.google.com/feeds/default/private/full/-/document");
+                feed = service.getFeed(url, DocumentListFeed.class);
+                while(dtm.getRowCount() > 0){
+                    dtm.removeRow(0);
+                }
+                for (DocumentListEntry entry : feed.getEntries())
+                {
+                    //System.out.println(entry.getTitle().getPlainText() + " || " + entry.getResourceId());
+                    dtm.addRow(new Object[] {entry.getTitle().getPlainText(), entry.getResourceId()});
+                }
+            }
+            catch (MalformedURLException m) {} catch (ServiceException s) {} catch (IOException i) {}
     }
 
     // Variables declaration - do not modify//GEN-BEGIN:variables

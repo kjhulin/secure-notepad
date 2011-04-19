@@ -156,8 +156,6 @@ public class createFileWindow extends javax.swing.JFrame {
             //Delete old file(check if exists?)
             try
             {
-                System.out.println("Contents written");
-
                 String mimeType = DocumentListEntry.MediaType.fromFileName(newFile.getName()).getMimeType();
                 DocumentEntry newDocument = new DocumentEntry();
                 newDocument.setFile(newFile, mimeType);
@@ -165,9 +163,11 @@ public class createFileWindow extends javax.swing.JFrame {
 
                 service.insert(new URL("https://docs.google.com/feeds/default/private/full"), newDocument);
                 newFile.delete();
+
+                JOptionPane.showMessageDialog(null, "File successfully uploaded to Google Docs");
             }
-            catch(Exception e){System.err.println("Error writing to file");}
-    
+            catch(Exception e){JOptionPane.showMessageDialog(null, "File NOT uploaded to Google Docs");}
+            MainWindow.refreshTable();
             this.dispose();
         }
 }//GEN-LAST:event_btn_AddFileActionPerformed
