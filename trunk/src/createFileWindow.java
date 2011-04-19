@@ -170,7 +170,7 @@ public class createFileWindow extends javax.swing.JFrame {
                 newDocument.setTitle(new PlainTextConstruct(fileName));
 
                 service.insert(new URL("https://docs.google.com/feeds/default/private/full"), newDocument);
-                newFile.delete();
+                //newFile.delete();
             }
             catch(Exception e){System.err.println("Error writing to file");}
     

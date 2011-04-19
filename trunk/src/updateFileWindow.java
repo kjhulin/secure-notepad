@@ -151,31 +151,14 @@ public class updateFileWindow extends javax.swing.JFrame {
             /***********************************/
 
             //upload file in google docs
-            try{
-                Random rand = new Random();
-                File file;
-
-                do{
-                    String fname = "TMP"+rand.nextInt(Integer.MAX_VALUE)+".txt";
-                    file = new File(fname);
-                }while(file.isFile());
-
-                System.out.println("tmp file " + file.getName());
-                file.createNewFile();
-                System.out.println("File created");
-
-                FileOutputStream fos = new FileOutputStream(file);
-                fos.write(fileContent.getBytes());
-                fos.close();
-                System.out.println("Contents written");
-
+            try{/*
                 String mimeType = DocumentListEntry.MediaType.fromFileName(file.getName()).getMimeType();
                 DocumentEntry newDocument = new DocumentEntry();
                 newDocument.setFile(file, mimeType);
                 newDocument.setTitle(new PlainTextConstruct(fileName));
 
                 service.insert(new URL("https://docs.google.com/feeds/default/private/full"), newDocument);
-                file.delete();
+                file.delete();*/
             }catch(Exception e){
                 System.err.println("Error writing to file");
             }
