@@ -71,6 +71,7 @@ public class Crypto
 			int numRead = 0;
 			while((numRead = is.read(buf)) >= 0)
 				os.write(buf, 0, numRead);
+			is.close();
 			os.close();
 		}
 		catch(IOException ioe)
@@ -130,6 +131,7 @@ public class Crypto
 			int numRead = 0;
 			while((numRead = is.read(buf)) >= 0)
 				os.write(buf, 0, numRead);
+			is.close();
 			os.close();
 		}
 		catch(IOException ioe)
