@@ -26,7 +26,7 @@ public class updateFileWindow extends javax.swing.JFrame {
     String fileName = "";
     String fileText = "";
     DocsService service;
-
+    String fileID;
     /** Creates new form updateFileWindow */
     public updateFileWindow(DocsService s) {
         initComponents();
@@ -138,8 +138,16 @@ public class updateFileWindow extends javax.swing.JFrame {
             String fileContent = tf_FileContent.getText();
             String filePassword = tf_FilePassword.getText();
 
-            //TO DO: DELETE OLD VERSION OF FILE FROM GOOGLE DOC SERVER
+            //TODO: Verify that user knows password for file deletion
 
+            //Delete old version from gdocs
+            try{
+            URL delURL = new URL("https://docs.google.com/feeds/default/private/full/" + fileID);
+
+            service.delete(delURL, service.getEntry(delURL, DocumentListEntry.class).getEtag());
+            }catch(Exception e){
+                System.err.println("Error deleting file from gdocs");
+            }
             /***********************************/
 
             //upload file in google docs
@@ -198,11 +206,12 @@ public class updateFileWindow extends javax.swing.JFrame {
     }
 
 
-     public void setFileProperties(String fname, String ftext)
+     public void setFileProperties(String fname, String ftext, String fid)
     {
         fileName = fname;
         fileText = ftext;
         tf_FileContent.setText(fileText);
+        fileID = fid;
     }
 
     // Variables declaration - do not modify//GEN-BEGIN:variables

@@ -63,15 +63,15 @@ import javax.swing.text.BadLocationException;
 import javax.swing.text.Document;
 
 
-public class MainWindow extends javax.swing.JFrame {
+public class MainWindowOld extends javax.swing.JFrame {
     public DocsService service;
     DefaultTableModel dtm = new DefaultTableModel();
     String currentUser = "";
     String currentPass = "";
     String publicFileName = "";
 
-    /** Creates new form MainWindow */
-    public MainWindow() {
+    /** Creates new form MainWindowOld */
+    public MainWindowOld() {
         initComponents();
         service = new DocsService("SecureNotepad");
 
@@ -242,7 +242,7 @@ public class MainWindow extends javax.swing.JFrame {
 
     private void btn_CreateFileActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btn_CreateFileActionPerformed
         
-        createFileWindow cfw = new createFileWindow(service);
+        createFileWindow cfw = new createFileWindow();
         cfw.setVisible(true);
     }//GEN-LAST:event_btn_CreateFileActionPerformed
 
@@ -273,7 +273,6 @@ public class MainWindow extends javax.swing.JFrame {
             }
             
             /*****************************************/
-            //FILLING TABLE
 
             //COMPLETED: ADD FILLING OF TABLE HERE
 
@@ -283,17 +282,10 @@ public class MainWindow extends javax.swing.JFrame {
 
                 URL url = new URL("https://docs.google.com/feeds/default/private/full/-/document");
                 feed = service.getFeed(url, DocumentListFeed.class);
-                while(dtm.getRowCount() > 0){
-                    dtm.removeRow(0);
-                }
+
                 for (DocumentListEntry entry : feed.getEntries())
                 {
-
-
-                    System.out.println(entry.getTitle().getPlainText() + " || " + entry.getResourceId());
-
                     //System.out.println(entry.getTitle().getPlainText() + " || " + entry.getResourceId());
-
                     dtm.addRow(new Object[] {entry.getTitle().getPlainText(), entry.getResourceId()});
                 }
             }
@@ -325,7 +317,7 @@ public class MainWindow extends javax.swing.JFrame {
                 String filePass = tf_FilePassword.getText();
                 String fileName = tableView.getValueAt(indexSelected, 0).toString();
                 String fileID = tableView.getValueAt(indexSelected, 1).toString();
-                System.out.println(fileName + " || " + fileID.substring(9));
+                String fileText = "";
 
                 //COMPLETED: DOWNLOAD FILE FROM GOOGLE
                 String downloadURL = ("https://docs.google.com/feeds/download/documents/Export?exportFormat=txt&id="+
@@ -342,7 +334,7 @@ public class MainWindow extends javax.swing.JFrame {
                     {
                         inStream = ms.getInputStream();
                         outStream = new FileOutputStream(fileName + ".txt");
-                
+
                         int c;
                         while ((c = inStream.read()) != -1)
                         {
@@ -374,8 +366,8 @@ public class MainWindow extends javax.swing.JFrame {
                 /********************************/
 
                 //TO DO: DECRYPT FILE USING filePass AND fileID
-                String fileText = "";
 
+                //reading of the file's content
                 try
                 {
                     BufferedReader br = new BufferedReader(new FileReader(fileName + ".txt"));
@@ -387,15 +379,12 @@ public class MainWindow extends javax.swing.JFrame {
                     br.close();
                 } catch (IOException e) {}
 
-                /********************************/
 
+                /********************************/
                 //Open Update File Window for Editing
-                updateFileWindow ufw = new updateFileWindow(service);
+                updateFileWindow ufw = new updateFileWindow();
                 ufw.setVisible(true);
-                ufw.setFileProperties(fileName, fileText,fileID );
-
-                /********************************/
-
+                ufw.setFileProperties(fileName, fileText);
             }
         }
     }//GEN-LAST:event_btn_UpdateFileActionPerformed
@@ -447,7 +436,7 @@ public class MainWindow extends javax.swing.JFrame {
     public static void main(String args[]) {
         java.awt.EventQueue.invokeLater(new Runnable() {
             public void run() {
-                new MainWindow().setVisible(true);
+                new MainWindowOld().setVisible(true);
             }
         });
     }
