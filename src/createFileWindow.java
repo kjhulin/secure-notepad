@@ -162,30 +162,15 @@ public class createFileWindow extends javax.swing.JFrame {
             //Delete old file(check if exists?)
             try
             {
-                Random rand = new Random();
-                File file;
-
-                do
-                {
-                    String fname = "TMP"+rand.nextInt(Integer.MAX_VALUE)+".txt";
-                    file = new File(fname);
-                }while(file.isFile());
-                System.out.println("tmp file " + file.getName());
-                file.createNewFile();
-                System.out.println("File created");
-
-                FileOutputStream fos = new FileOutputStream(file);
-                fos.write(fileContent.getBytes());
-                fos.close();
                 System.out.println("Contents written");
 
-                String mimeType = DocumentListEntry.MediaType.fromFileName(file.getName()).getMimeType();
+                String mimeType = DocumentListEntry.MediaType.fromFileName(newFile.getName()).getMimeType();
                 DocumentEntry newDocument = new DocumentEntry();
-                newDocument.setFile(file, mimeType);
+                newDocument.setFile(newFile, mimeType);
                 newDocument.setTitle(new PlainTextConstruct(fileName));
 
                 service.insert(new URL("https://docs.google.com/feeds/default/private/full"), newDocument);
-                file.delete();
+                newFile.delete();
             }
             catch(Exception e){System.err.println("Error writing to file");}
     
