@@ -179,6 +179,10 @@ public class updateFileWindow extends javax.swing.JFrame {
                 service.insert(new URL("https://docs.google.com/feeds/default/private/full"), newDocument);
                 //newFile.delete();
             }catch(Exception e){System.err.println("Error writing to file");}
+
+            if (newFile.exists())
+                newFile.delete(); //gets rid of local copy of file
+
             this.dispose();
         }
 }//GEN-LAST:event_btn_UpdateFileActionPerformed

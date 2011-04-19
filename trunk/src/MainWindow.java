@@ -432,6 +432,8 @@ public class MainWindow extends javax.swing.JFrame {
 
                     /********************************/
                 }
+                if (updateFile.exists())
+                    updateFile.delete(); //gets rid of local copy of file
             }
         }
     }//GEN-LAST:event_btn_UpdateFileActionPerformed
@@ -462,8 +464,67 @@ public class MainWindow extends javax.swing.JFrame {
                 String fileID = tableView.getValueAt(indexSelected, 1).toString();
                 File deleteFile = new File(fileName);
 
-                //TO DO: CONFIRM HMAC IS CORRECT
+                //COMPLETED: DOWNLOAD FILE FROM GOOGLE
+                String downloadURL = ("https://docs.google.com/feeds/download/documents/Export?exportFormat=txt&id="+
+                        fileID.substring(9)); //substring(8) removes "document:"
+                MediaContent mc = new MediaContent();
+                mc.setUri(downloadURL);
+                try
+                {
+                    MediaSource ms = service.getMedia(mc);
 
+                    InputStream inStream = null;
+                    FileOutputStream outStream = null;
+
+                    try
+                    {
+                        inStream = ms.getInputStream();
+                        outStream = new FileOutputStream(deleteFile);
+
+                        int c;
+                        int count = 0;
+                        //System.out.println();
+
+                        /*
+                         * Note: for some reason, Google always gives us three
+                         * extra bytes at the top of any file that we
+                         * read in. This causes major problems for the parsing
+                         * methods we use, so we skip the first 3 bytes
+                         * we read. If for some reason these 3 bytes fail to appear
+                         * our program will break. Note that we do not give
+                         * Google these 3 bytes when we submit our file; they are
+                         * always added upon download.
+                         */
+                        while ((c = inStream.read()) != -1)
+                        {
+                            if (count < 3)
+                            {
+                                count++;
+                            }
+                            else
+                            {
+                                outStream.write(c);
+                                //System.out.println((char)c);
+                            }
+                        }
+                    }
+                    finally
+                    {
+                        if (inStream != null)
+                        {
+                            inStream.close();
+                        }
+                        if (outStream != null)
+                        {
+                            outStream.flush();
+                            outStream.close();
+                        }
+                    }
+                }catch (MalformedURLException m) {} catch (ServiceException s) {} catch (IOException i) {}
+
+
+
+                //COMPLETED: CONFIRM HMAC IS CORRECT
                
                 CryptoStore CSone = Crypto.parseFile(deleteFile);
                 CryptoStore CStwo = new CryptoStore();
@@ -491,6 +552,9 @@ public class MainWindow extends javax.swing.JFrame {
                     }
                     catch (MalformedURLException m) {} catch (ServiceException s) {} catch (IOException i) {}
                 }
+
+                if (deleteFile.exists())
+                    deleteFile.delete(); //gets rid of local copy of file
             }
         }
     }//GEN-LAST:event_btn_DeleteSelectedFileActionPerformed
