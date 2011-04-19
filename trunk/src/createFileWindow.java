@@ -134,11 +134,7 @@ public class createFileWindow extends javax.swing.JFrame {
             String fileContent = tf_FileContent.getText();
             String filePassword = tf_FilePassword.getText();
             File newFile = new File(fileName);
-            //TO DO: ENCRYPT FILE PROPERLY (add hash/salt/etc)
-            if (newFile.exists())
-            {
-                System.out.println("created file: " + fileName);
-            }
+            //Completed: ENCRYPT FILE PROPERLY (add hash/salt/etc)
 
             //creation of the cleartext file
             try
@@ -157,8 +153,6 @@ public class createFileWindow extends javax.swing.JFrame {
             //replace old, non-HMAC+Salt file with new file
             Crypto.createFile(newFile, newCS);
             
-            //TODO: modify constructor to pass in array of filenames that already exists
-            //TODO: check if specified filename already exists
             //Delete old file(check if exists?)
             try
             {
