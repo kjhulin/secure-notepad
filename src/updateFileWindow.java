@@ -169,20 +169,19 @@ public class updateFileWindow extends javax.swing.JFrame {
 
             try
             {
-                System.out.println("Contents written");
-
                 String mimeType = DocumentListEntry.MediaType.fromFileName(newFile.getName()).getMimeType();
                 DocumentEntry newDocument = new DocumentEntry();
                 newDocument.setFile(newFile, mimeType);
                 newDocument.setTitle(new PlainTextConstruct(fileName));
 
                 service.insert(new URL("https://docs.google.com/feeds/default/private/full"), newDocument);
-                //newFile.delete();
-            }catch(Exception e){System.err.println("Error writing to file");}
+                JOptionPane.showMessageDialog(null, "File successfully updated");
+            }catch(Exception e){JOptionPane.showMessageDialog(null, "Exception Caught: File NOT updated properly");}
 
             if (newFile.exists())
                 newFile.delete(); //gets rid of local copy of file
 
+            MainWindow.refreshTable();
             this.dispose();
         }
 }//GEN-LAST:event_btn_UpdateFileActionPerformed
