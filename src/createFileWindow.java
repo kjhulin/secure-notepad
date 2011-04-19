@@ -135,6 +135,10 @@ public class createFileWindow extends javax.swing.JFrame {
             String filePassword = tf_FilePassword.getText();
             File newFile = new File(fileName);
             //TO DO: ENCRYPT FILE PROPERLY (add hash/salt/etc)
+            if (newFile.exists())
+            {
+                System.out.println("created file: " + fileName);
+            }
 
             //creation of the cleartext file
             try
