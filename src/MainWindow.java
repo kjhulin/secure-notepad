@@ -325,7 +325,7 @@ public class MainWindow extends javax.swing.JFrame {
                 String filePass = tf_FilePassword.getText();
                 String fileName = tableView.getValueAt(indexSelected, 0).toString();
                 String fileID = tableView.getValueAt(indexSelected, 1).toString();
-                System.out.println(fileName + " || " + fileID.substring(9));
+                File updateFile = new File(fileName);
 
                 //COMPLETED: DOWNLOAD FILE FROM GOOGLE
                 String downloadURL = ("https://docs.google.com/feeds/download/documents/Export?exportFormat=txt&id="+
@@ -338,15 +338,26 @@ public class MainWindow extends javax.swing.JFrame {
 
                     InputStream inStream = null;
                     FileOutputStream outStream = null;
+
                     try
                     {
                         inStream = ms.getInputStream();
-                        outStream = new FileOutputStream(fileName + ".txt");
-                
+                        outStream = new FileOutputStream(updateFile);
+
                         int c;
+                        int count = 0;
+                        //System.out.println();
                         while ((c = inStream.read()) != -1)
                         {
-                            outStream.write(c);
+                            if (count < 3)
+                            {
+                                count++;
+                            }
+                            else
+                            {
+                                outStream.write(c);
+                                //System.out.println((char)c);
+                            }
                         }
                     }
                     finally
@@ -367,35 +378,49 @@ public class MainWindow extends javax.swing.JFrame {
 
                 //TO DO: CONFIRM HMAC IS CORRECT
 
-                //there will be an IF-ELSE statement here.
-                //if hmac incorrect, display an error
-                //else, continue with business as usual
 
-                /********************************/
 
-                //TO DO: DECRYPT FILE USING filePass AND fileID
-                String fileText = "";
+                CryptoStore CSone = Crypto.parseFile(updateFile);
+                CryptoStore CStwo = new CryptoStore();
+                CStwo.setHashSalt(CSone.getHashSalt());
+                CStwo = Crypto.calcHMAC(updateFile, filePass, CStwo);
+                String CSOneHex = Crypto.toHexString(CSone.getHMAC());
+                String CSTwoHex = Crypto.toHexString(CStwo.getHMAC());
 
-                try
+                if (!CSOneHex.equals(CSTwoHex))
                 {
-                    BufferedReader br = new BufferedReader(new FileReader(fileName + ".txt"));
-                    String str;
-                    while ((str = br.readLine()) != null)
+                    System.out.println("Wrong password/HMACs not matching");
+                }
+                else
+                {
+                    System.out.println("HMACS match + Password Correct");
+
+                    /********************************/
+
+                    Crypto.decryptAES(updateFile, filePass, CSone);
+
+                    String fileText = "";
+
+                    try
                     {
-                        fileText += (str);
-                    }
-                    br.close();
-                } catch (IOException e) {}
+                        BufferedReader br = new BufferedReader(new FileReader(updateFile));
+                        String str;
+                        while ((str = br.readLine()) != null)
+                        {
+                            fileText += (str);
+                        }
+                        br.close();
+                    } catch (IOException e) {}
 
-                /********************************/
+                    /********************************/
 
-                //Open Update File Window for Editing
-                updateFileWindow ufw = new updateFileWindow(service);
-                ufw.setVisible(true);
-                ufw.setFileProperties(fileName, fileText,fileID );
+                    //Open Update File Window for Editing
+                    updateFileWindow ufw = new updateFileWindow(service);
+                    ufw.setVisible(true);
+                    ufw.setFileProperties(fileName, fileText, fileID );
 
-                /********************************/
-
+                    /********************************/
+                }
             }
         }
     }//GEN-LAST:event_btn_UpdateFileActionPerformed
