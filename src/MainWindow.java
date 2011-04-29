@@ -269,7 +269,7 @@ public class MainWindow extends javax.swing.JFrame {
             } 
             catch (AuthenticationException e)
             {
-                System.out.println("Invalid Username/Password Combination");
+                System.out.println("Invalid Username/Password Combination/CAPTCHA Encountered");
             }
             
             /*****************************************/
